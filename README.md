@@ -6,14 +6,14 @@ This repository provides the SearchBundle for Claroline platform. This bundle us
 The SearchBundle will listen all events from the ClarolineConnect platform and will index the content at creation or modification time.
 
 ### SOLR installation
-A tutorial which explain how to setup a SOLR server is available here : [Solr installation][2]
-The Recommanded version is Solr 4.6
+- A tutorial which explain how to setup a SOLR server is available here : [Solr installation][2]
+- The Recommanded version is Solr 4.6
 Configuration files are available [here][3]
 
 ### SearchBundle installation
-to be completed
+- to be completed
 
 
-[1]:http://www.php.net/manual/en/book.image.php
+[1]:http://lucene.apache.org/solr/
 [2]:http://lucene.apache.org/solr/tutorial.html
 [3]:https://github.com/Claroline/SearchBundle
