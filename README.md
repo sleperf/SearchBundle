@@ -1,0 +1,4 @@
+SearchBundle
+============
+
+SearchBundle for ClarolineConnect
