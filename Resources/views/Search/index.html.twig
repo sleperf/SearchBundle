@@ -1,0 +1,57 @@
+{% set layout = "ClarolineCoreBundle:Workspace:layout.html.twig" %}
+
+           
+{% extends layout %}
+
+{% block leftSide %}
+TEST
+{% endblock %}
+
+{% block section_content %}
+    <div class="panel-heading">
+        <h3 class="panel-title">{{ 'Liste résultats'|trans({}, 'search') }}</h3>
+    </div>
+    <div class="panel-body">
+	            <div class="col-md-6">
+<p>Recherche :  {{ name }} </p>
+<p>Nombre de résultats : {{ results.getNumFound() }}</p>
+		</div>
+		            <div class="col-md-6">
+<p>Recherche :  {{ name }} </p>
+<p>Nombre de résultats : {{ results.getNumFound() }}</p>
+		</div>
+		{% for document in results %}
+
+        <div class="table-responsive">
+            <table id="subjects_table" class="table table-striped table-bordered table-condensed">
+                <thead>
+                    <tr>
+                        <th>{{ 'parameter'|trans({}, 'search') }}</th>
+                        <th>{{ 'value'|trans({}, 'search') }}</th>
+                    </tr>
+                </thead>
+                <tbody id="table-subjects-body">
+
+			{% for field,value in document %}
+				{% if value[0] is not defined %}
+					<tr><th> {{ field }} </th><td> {{ value }} 
+					{% if field == "res_icon_location" %}
+						<img src='http://p-mooc-dev/claroline/20131113/Claroline/web/{{document["res_icon_location"]}}' width='48px' />
+					{% endif %}
+					{% if field == "name" %}
+				 <a href='http://p-mooc-dev/claroline/20131113/Claroline/web/app_dev.php/resource/open/{{document["type"]}}/{{document["resource_id"]}}'>Voir la ressource</a>
+					{% endif %}
+					</td></tr>
+				{% else %}
+					<tr><th> {{ field }} </th><td> {{ value|join(',') }} </td></tr>
+				{% endif %}
+			{% endfor %}
+
+
+			</tbody>
+			</table>
+			</div>
+        {% endfor %}
+    </div>
+
+{% endblock %}

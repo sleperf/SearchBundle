@@ -1,0 +1,12 @@
+solr_config: Configuration SOLR
+file: Fichier
+name: Nom
+type: Type
+nb_results: Nombre de résultats
+search: Rechercher
+solr_host: Nom ou adresse IP du serveur
+solr_port: Port
+solr_path: Chemin
+list_results: Liste résultats
+solr_current_configuration: Configuration actuelle
+solr_change_configuration: Modification de la configuration

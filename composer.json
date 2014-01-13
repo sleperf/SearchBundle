@@ -1,0 +1,26 @@
+{
+    "name": "orange/search-bundle",
+    "description": "Orange Search plugin",
+    "keywords": ["Claroline", "Plugin", "Orange", "Search"],
+    "homepage": "http://www.claroline.net",
+    "type": "claroline-plugin",
+    "license": "",
+    "authors": [
+        {
+            "name": "Orange development team",
+            "email": "stephane.leperf@orange.com",
+            "homepage": "http://github.com/claroline"
+        }
+    ],
+    "require": {
+        "php": ">=5.4.0",
+        "claroline/core-bundle": ">=2.1.11,<3.0"
+    },
+    "autoload": {
+        "psr-0": { "Orange\\SearchBundle": "" }
+    },
+    "target-dir": "Orange/SearchBundle",
+    "extra": {
+        "dbVersion": "20131120092300"
+    }	
+}

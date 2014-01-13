@@ -1,0 +1,13 @@
+orange_search_bundle:
+    resource: "@OrangeSearchBundle/Controller/"
+    type:     annotation
+    prefix:   /
+
+
+solr_stats:
+    path:  /stats
+    defaults: { _controller: OrangeSearchBundle:Search:stats }
+
+solr_delete:
+    path:  /deleteIndex
+    defaults: { _controller: OrangeSearchBundle:Search:deleteIndex }

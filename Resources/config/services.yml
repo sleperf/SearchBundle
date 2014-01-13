@@ -1,0 +1,10 @@
+parameters:
+#    orange_search.example.class: Orange\SearchBundle\Example
+services:
+    kernel.listener.orange_search_listener:
+        class: Orange\SearchBundle\Listener\OrangeSearchListener
+        tags:
+            - { name: doctrine.event_listener, event: postFlush, method: postFlush }
+            - { name: doctrine.event_listener, event: postRemove, method: postRemove }
+            - { name: doctrine.event_listener, event: postPersist, method: postPersist }
+            - { name: doctrine.event_listener, event: postUpdate, method: postUpdate }

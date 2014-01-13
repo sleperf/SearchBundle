@@ -1,0 +1,42 @@
+{% set layout = "ClarolineCoreBundle:Workspace:layout.html.twig" %}
+
+           
+{% extends layout %}
+
+{% block section_content %}
+    <div class="panel-heading">
+        <h3 class="panel-title">{{ 'solr_config'|trans({}, 'search') }}</h3>
+    </div>
+    <div class="panel-body">
+	<h3>{{ 'solr_current_configuration'|trans({}, 'search') }}</h3>
+	<p>{{ 'solr_host'|trans({}, 'search') }} :  {{ name.getHost() }} </p>
+	<p>{{ 'solr_port'|trans({}, 'search') }} :  {{ name.getPort() }} </p>
+	<p>{{ 'solr_path'|trans({}, 'search') }} :  {{ name.getPath() }} </p>
+    </div>
+        <div class="col-md-12">
+	<h3>{{ 'solr_change_configuration'|trans({}, 'search') }}</h3>
+		
+{{ form_start(form) }}
+{{ form_errors(form) }}
+
+
+<div class="form-group row">
+
+{{ form_label(form.host,  'solr_host'|trans({}, 'search') ) }}
+
+<div class="col-md-3">{{ form_errors(form.host) }}{{ form_widget(form.host) }}</div>
+</div>
+<div class="form-group row">
+{{ form_label(form.port,  'solr_port'|trans({}, 'search') ) }}
+<div class="col-md-3">{{ form_errors(form.port) }}{{ form_widget(form.port) }}</div>
+</div>
+<div class="form-group row">
+{{ form_label(form.path,  'solr_path'|trans({}, 'search') ) }}
+<div class="col-md-3">{{ form_errors(form.path) }}{{ form_widget(form.path) }}</div>
+</div>
+		<br />
+    </div>
+	<div class="form-actions panel-footer">
+{{ form_end(form) }}		
+    </div>
+{% endblock %}

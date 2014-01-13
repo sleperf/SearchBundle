@@ -1,7 +1,7 @@
 SearchBundle for ClarolineConnect
 =================================
 
-This repository provides the SearchBundle for Claroline platform. This bundle use the [Solr search engine][1]
+This repository provides the SearchBundle for [Claroline platform][4]. This bundle use the [Solr search engine][1]
 
 The SearchBundle will listen all events from the ClarolineConnect platform and will index the content at creation or modification time.
 
@@ -17,3 +17,4 @@ Configuration files are available [here][3]
 [1]:http://lucene.apache.org/solr/
 [2]:http://lucene.apache.org/solr/tutorial.html
 [3]:https://github.com/Claroline/SearchBundle
+[4]:https://github.com/claroline
