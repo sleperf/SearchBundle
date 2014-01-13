@@ -19,17 +19,4 @@ private $container;
             ->setDescription('Install fixtures for a specified claroline plugin.');
     }
 
-    function __construct()
-    {
-		$this->configSolr = array(
-			'endpoint' => array(
-				'localhost' => array(
-					'host' => 'p-mooc-dev',
-					'port' => 8984,
-					'path' => '/solr/core0/'
-				)
-			)
-		);		
-    }
-
 }
