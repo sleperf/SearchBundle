@@ -79,7 +79,8 @@ class OrangeSearchListener extends ContainerAware
         if (count($config)==0) 
 		{
 			// lancer une exception
-            throw new InvalidConfigurationException(InvalidConfigurationException::MISSING_CONFIG);
+            //throw new InvalidConfigurationException(InvalidConfigurationException::MISSING_CONFIG);
+			throw new \Exception('SOLR configuration missing');
 		}
 		
 		$configSolr = array(
@@ -123,7 +124,7 @@ class OrangeSearchListener extends ContainerAware
         if (count($config)==0) 
 		{
 			// lancer une exception
-            throw new InvalidConfigurationException(InvalidConfigurationException::MISSING_CONFIG);
+			throw new \Exception('SOLR configuration missing');
 		}
 		
 		$configSolr = array(

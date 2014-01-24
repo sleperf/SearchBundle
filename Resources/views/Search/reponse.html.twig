@@ -11,12 +11,12 @@
         <h3 class="panel-title">{{ 'list_results'|trans({}, 'search') }}</h3>
     </div>
     <div class="panel-body">
-	    <div class="col-md-6">
+	    <div class="content-element content-6">
 <p>{{ 'nb_results'|trans({}, 'search') }} : {{ nbResults }}</p>
 <br/>Time {{time}} ms
 		</div>
 					<form class="form-horizontal" method="POST" action="" >
-		<div class="col-md-6">
+		<div class="content-element content-6">
 			 <div class="input-group">
 			   <input class="form-control" type="text" id="search-items-txt" name="search" placeholder="{{ 'search'|trans({}, 'search') }}" value="{{ name }}">
 		<select class="form-control" name="resource_type" id="resource_type" style="width:150px">
@@ -39,21 +39,21 @@
 			</div>
 		</div>
     </form>
+		</div>
 
-	    <div class="col-md-3">
+    <div class="panel-body">
+		<div class="content-element content-3">
 		<h3>Content Type</h3>
 		{% for facet,value in facets %}
 		{{facet}} ({{value}})<br />
 		{% endfor %}
-        </div>
-
-	    <div class="col-md-3">
 		<h3>Facet Workspace</h3>
 		{% for facet,value in facetsWks %}
 		{{facet}} ({{value}})<br />
 		{% endfor %}
         </div>
-
+		
+	    <div class="content-element  content-9">
 		<table id="subjects_table" class="table table-striped table-bordered table-condensed">
                 <thead>
                     <tr>
@@ -75,7 +75,15 @@
 					<a href='{{ document["attr_custom:dailymotion"] }}' target='_new'>Video</a>
 					{% endif %}
 					</td>
-					<td>{{document["name"]}}<br /><small>Cours : {{document["wks_name"]}} / Owner : {{document["last_name"]}} {{document["first_name"]}}</small><br/>
+					<td>
+					{% if document["owner"] == false %}
+					<font color='red'>
+					{% else %}
+					<font color='green'>
+					{% endif %}
+					{{document["name"]}}
+					</font>
+					<br /><small>Cours : {{document["wks_name"]}} / Owner : {{document["last_name"]}} {{document["first_name"]}}</small><br/>
 					<i><font color='grey'>{{document["content"]|raw}}...</font></i></td>
 					<td>{{document["content_type"]}}<br /><small>{{document["mime_type"]}}</small></td>
 					<td>
@@ -98,6 +106,7 @@
 
 			</tbody>
 			</table>
+		
 		{# Arrondi à faire pour avoir le bon nombre de page #}
 		{% set maxPage = nbResults / nbByPage %}
 		
@@ -114,7 +123,7 @@
 		  <a href='{{ path('orange_search_request', {'page': p, 'nb': nbByPage}) }}?search={{name}}'>{{p}}</a>
 		 {% endif %}
 		{% endfor %}
-		  <a href='{{url}}/search/request/{{name}}/page/{{p}}/nb/{{nbByPage}}'>{{ p }}</a>
+		</div>
 			</div>
     </div>
 

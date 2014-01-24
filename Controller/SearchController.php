@@ -5,6 +5,7 @@ namespace Orange\SearchBundle\Controller;
 use Orange\SearchBundle;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Claroline\CoreBundle\Entity\Resource\ResourceNode;
+use Claroline\CoreBundle\Library\Resource\ResourceCollection;
 //use Claroline\CoreBundle\Entity\Workspace\AbstractWorkspace;
 use Nelmio\SolariumBundle\DependencyInjection\NelmioSolariumExtension;
 use Nelmio\SolariumBundle\DependencyInjection;
@@ -242,27 +243,20 @@ class SearchController extends Controller
 			
 			$nb = $results->getNumFound();
 			$time = 0;
-	// display facet results
-	$facetResult = $results->getFacetSet()->getFacet('content-type');
-	$facetResultWks = $results->getFacetSet()->getFacet('wks');
-	$facetWks = array();
-	foreach ($facetResultWks as $key => $frWks) {
-			$wks = $manager->getRepository('Claroline\CoreBundle\Entity\Workspace\AbstractWorkspace')->find($key);
-		$facetWks[$wks->getName()] = $frWks;
-	}
-		// echo "<PRE>";
-		// print_r($facetResultWks);
-		// echo "</PRE>";
+
+			// display facet results
+			$facetResult = $results->getFacetSet()->getFacet('content-type');
+			$facetResultWks = $results->getFacetSet()->getFacet('wks');
+			$facetWks = array();
+			foreach ($facetResultWks as $key => $frWks) {
+				$wks = $manager->getRepository('Claroline\CoreBundle\Entity\Workspace\AbstractWorkspace')->find($key);
+				$facetWks[$wks->getName()] = $frWks;
+			}
 			
-			
-			// display the total number of documents found by solr
-	//echo 'NumFound: '.$results->getNumFound();
-	  // echo "<PRE>";
-	  // print_r($results);
-	  // echo "</PRE>";
 			$lr = array();
 			foreach ($results as $result)
 			{
+				
 				$r = array();
 				foreach($result AS $field => $value)
 				{
@@ -271,6 +265,17 @@ class SearchController extends Controller
 					$r[$field] = $value;
 				}
 				
+				// We check if user has access to the resource
+				$resourceNode = $manager->getRepository('Claroline\CoreBundle\Entity\Resource\ResourceNode')->find($r["resource_id"]);
+				
+				if ($this->security->isGranted("open", new ResourceCollection(array($resourceNode)))) {
+					$r["owner"] = true;
+				}
+				else
+				{
+					$r["owner"] = false;
+				}
+
 				if (!isset($r["mime_type"])) $r["mime_type"] = "";
 				
 				// Traitement à faire sur la liste réponse
@@ -282,9 +287,6 @@ class SearchController extends Controller
 				if (isset($r["wks_id"]))
 				{
 					$wks = $manager->getRepository('Claroline\CoreBundle\Entity\Workspace\AbstractWorkspace')->find($r["wks_id"]);
-		  // echo "<PRE>";
-		  // print_r($wks);
-		  // echo "</PRE>";
 					$r["wks_name"] = $wks->getName();
 				}
 				else
@@ -292,7 +294,7 @@ class SearchController extends Controller
 					$r["wks_name"] = "";
 				}
 				
-				// Est-ce qu'il s'agit d'une transcription texte d'une vidéo
+				// TODO - Est-ce qu'il s'agit d'une transcription texte d'une vidéo
 				if (isset($r["attr_custom:dailymotion"]))
 				{
 				}
@@ -352,7 +354,7 @@ class SearchController extends Controller
 
     /**
      * @EXT\Route(
-     *     "/request/ping/",
+     *     "/ping/",
      *     name = "orange_search_ping"
      * )
      * @EXT\Method("GET")
