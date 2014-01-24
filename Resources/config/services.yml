@@ -3,6 +3,7 @@ parameters:
 services:
     kernel.listener.orange_search_listener:
         class: Orange\SearchBundle\Listener\OrangeSearchListener
+        arguments: [ @service_container ]
         tags:
             - { name: doctrine.event_listener, event: postFlush, method: postFlush }
             - { name: doctrine.event_listener, event: postRemove, method: postRemove }

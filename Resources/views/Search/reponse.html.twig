@@ -1,13 +1,10 @@
-{% set layout = "ClarolineCoreBundle:Workspace:layout.html.twig" %}
+{% extends 'ClarolineCoreBundle:Workspace:layout.html.twig' %}
 
            
-{% extends layout %}
-
-{% block leftSide %}
-TEST
+{% block stylesheets %}
+    {{ parent() }}
 {% endblock %}
 
-{% from _self import renderPager %}
 
 {% block section_content %}
     <div class="panel-heading">
@@ -18,16 +15,30 @@ TEST
 <p>{{ 'nb_results'|trans({}, 'search') }} : {{ nbResults }}</p>
 <br/>Time {{time}} ms
 		</div>
+					<form class="form-horizontal" method="POST" action="" >
 		<div class="col-md-6">
 			 <div class="input-group">
-			   <input class="form-control" type="text" id="search-items-txt" placeholder="{{ 'search'|trans({}, 'search') }}" value="{{ name }}">
+			   <input class="form-control" type="text" id="search-items-txt" name="search" placeholder="{{ 'search'|trans({}, 'search') }}" value="{{ name }}">
+		<select class="form-control" name="resource_type" id="resource_type" style="width:150px">
+		{% set opt = 0 %}
+		{% for resourceType in resourcesType %}
+		{% if opt == 0 %}
+	    <option value="{{ resourceType }}" selected>{{ resourceType|trans({}, 'search') }}</option>
+		{% else %}
+	    <option value="{{ resourceType }}">{{ resourceType|trans({}, 'search') }}</option>
+		{% endif %}
+		{% set opt = opt + 1 %}
+				{% endfor %}
+				</select>
 				<span class="input-group-btn">
-					<button class="filter btn btn-default" type="button" id="search-button">
+					<button class="filter btn btn-default" type= "submit" id="search-button">
 						<i class="icon-search"></i>
 					</button>
+					<button class="config-search-panel btn btn-default" type="button"><i class="icon-cog"></i></button>
 				</span>
 			</div>
 		</div>
+    </form>
 
 	    <div class="col-md-3">
 		<h3>Content Type</h3>
@@ -54,7 +65,16 @@ TEST
                 </thead>
                 <tbody id="table-subjects-body">
 		{% for document in results %}
-					<tr><td><a href='http://p-mooc-dev/claroline/20131113/Claroline/web/app_dev.php/resource/open/{{document["type"]}}/{{document["resource_id"]}}'><img src='http://p-mooc-dev/claroline/20131113/Claroline/web/{{document["res_icon_location"]}}' width='24px' /></a></td>
+					<tr><td>
+					{% if document["mime_type"] == 'custom/claroline_forum' and document["subject_id"] is defined %}
+					<a href='{{ _path('claro_forum_messages', {'subjectId': document["subject_id"] }) }}'><img src='{{ app.request.getBasePath() }}/{{document["res_icon_location"]}}' width='48px' /></a>
+					{% else %}
+					<a href='{{url}}/resource/open/{{document["type"]}}/{{document["resource_id"]}}'><img src='{{ app.request.getBasePath() }}/{{document["res_icon_location"]}}' width='48px' /></a>
+					{% endif %}
+					{% if document["attr_custom:dailymotion"] != "" %}
+					<a href='{{ document["attr_custom:dailymotion"] }}' target='_new'>Video</a>
+					{% endif %}
+					</td>
 					<td>{{document["name"]}}<br /><small>Cours : {{document["wks_name"]}} / Owner : {{document["last_name"]}} {{document["first_name"]}}</small><br/>
 					<i><font color='grey'>{{document["content"]|raw}}...</font></i></td>
 					<td>{{document["content_type"]}}<br /><small>{{document["mime_type"]}}</small></td>
@@ -74,34 +94,24 @@ TEST
 					</td></tr>
 					-->
 				
-<!--
-			{% for field,value in document %}
-				{% if value[0] is not defined %}
-					<tr><th> {{ field }} </th><td> {{ value }} 
-					{% if field == "res_icon_location" %}
-						<img src='http://p-mooc-dev/claroline/20131113/Claroline/web/{{document["res_icon_location"]}}' width='24px' />
-					{% endif %}
-					{% if field == "name" %}
-				 <a href='http://p-mooc-dev/claroline/20131113/Claroline/web/app_dev.php/resource/open/{{document["type"]}}/{{document["resource_id"]}}'>Voir la ressource</a>
-					{% endif %}
-					</td></tr>
-				{% else %}
-					<tr><th> {{ field }} </th><td> {{ value|join(',') }} </td></tr>
-				{% endif %}
-			{% endfor %}
--->
         {% endfor %}
 
 			</tbody>
 			</table>
 		{# Arrondi à faire pour avoir le bon nombre de page #}
 		{% set maxPage = nbResults / nbByPage %}
+		
+		{# A supprimer après utilisation arrondi #}
+		{% if maxPage < 1 %}
+		{% set maxPage = 1 %}
+		{% endif %}
+		
 		Page
 		{% for p in 1..maxPage %}
 		{% if p == page %}
 		 <b> {{ p }}</b>
 		 {% else %}
-		  <a href='{{ path('orange_search_request', {'name': name, 'page': p, 'nb': nbByPage}) }}'>{{p}}</a>
+		  <a href='{{ path('orange_search_request', {'page': p, 'nb': nbByPage}) }}?search={{name}}'>{{p}}</a>
 		 {% endif %}
 		{% endfor %}
 		  <a href='{{url}}/search/request/{{name}}/page/{{p}}/nb/{{nbByPage}}'>{{ p }}</a>
@@ -111,23 +121,4 @@ TEST
 {% endblock %}
 {% block javascripts %}
     {{ parent() }}
-    {% javascripts
-        vars=["locale"]
-        "@ClarolineCoreBundle/Resources/views/Modal/modal.html.twigjs"
-        "@ClarolineCoreBundle/Resources/views/Modal/validationFooter.html.twigjs"
-        filter="twig_js"
-    %}
-    <script language="javascript" src="{{ asset_url }}"></script>
-    {% endjavascripts %}
-    <script>
-        $('#search-button').on('click', function(event) {
-            event.preventDefault();
-            var search = document.getElementById('search-items-txt').value;
-            if (search !== '') {
-                var route = Routing.generate('claro_forum_search', 'name': document.getElementById('search-items-txt').value});
-				console.log(route);
-                window.location.href = route;
-            }
-        });
-    </script>
 {% endblock %}

@@ -14,8 +14,11 @@ use Orange\SearchBundle\DataFixtures\LoadConfigData;
 use Orange\SearchBundle\Converter\InvalidConfigurationException;
 use Orange\SearchBundle\Entity\SearchConfig;
 use Orange\SearchBundle\Manager\SearchManager;
+//use Symfony\Component\HttpKernel\Exception\HttpException;
 
 use Solarium\Client;
+use Solarium\Exception\HttpException;
+
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Validator\Constraints\Length;
 use Symfony\Component\Validator\Constraints\NotBlank;
@@ -174,18 +177,19 @@ class SearchController extends Controller
 
     /**
      * @EXT\Route(
-     *     "/request/{name}/page/{page}/nb/{nbByPage}",
+     *     "/request/page/{page}/nb/{nbByPage}",
      *     name = "orange_search_request",
      *     defaults={"page"=1, "nbByPage"=5}
      * )
-     * @EXT\Method("GET")
      *
      * @EXT\Template("OrangeSearchBundle:Search:reponse.html.twig")
      *
      * @return Response
      */
-    public function requestAction($name, $page, $nbByPage)
+    public function requestAction($page, $nbByPage)
     {
+		$search = $this->getRequest()->get('search');
+		$filterResourceType = $this->getRequest()->get('resource_type');
 		$this->assertIsGranted('ROLE_USER');
 	
 		$manager = $this->getDoctrine()->getManager();
@@ -210,105 +214,192 @@ class SearchController extends Controller
 		);		
 
 		$client = new \Solarium\Client($config);
-        
-		$select = $client->createSelect();
-		//$client->setAdapter('Solarium\Core\Client\Adapter\Curl');
-		
-		// get the facetset component
-		$facetSet = $select->getFacetSet();
+		$ping = $client->createPing();
 
-		// create a facet field instance and set options
-		$facetSet->createFacetField('content-type')->setField('content_type');
-		$facetSet->createFacetField('wks')->setField('wks_id');
+		try {
+			$result = $client->ping($ping);
+			
+			$select = $client->createSelect();
+			//$client->setAdapter('Solarium\Core\Client\Adapter\Curl');
+			
+			// get the facetset component
+			$facetSet = $select->getFacetSet();
 
-		$select->setQuery($name);
-		$select->setStart(((int)$page-1)*$nbByPage)->setRows($nbByPage);
-		$select->setOmitHeader(false);
-		
-		$request = $client->createRequest($select)->addParam('qt','claroline');
-		$response = $client->executeRequest($request);
-		$results = $client->createResult($select, $response);		
-		
-		$nb = $results->getNumFound();
-		$time = 0;
-// display facet results
-$facetResult = $results->getFacetSet()->getFacet('content-type');
-$facetResultWks = $results->getFacetSet()->getFacet('wks');
-$facetWks = array();
-foreach ($facetResultWks as $key => $frWks) {
-		$wks = $manager->getRepository('Claroline\CoreBundle\Entity\Workspace\AbstractWorkspace')->find($key);
-	$facetWks[$wks->getName()] = $frWks;
-}
-	// echo "<PRE>";
-    // print_r($facetResultWks);
-	// echo "</PRE>";
-		
-		
-		// display the total number of documents found by solr
-//echo 'NumFound: '.$results->getNumFound();
-  // echo "<PRE>";
-  // print_r($results);
-  // echo "</PRE>";
-		$lr = array();
-		foreach ($results as $result)
-		{
-			$r = array();
-			foreach($result AS $field => $value)
-			{
-				if(is_array($value)) $value = implode(', ', $value);
+			// create a facet field instance and set options
+			$facetSet->createFacetField('content-type')->setField('content_type');
+			$facetSet->createFacetField('wks')->setField('wks_id');
 
-				$r[$field] = $value;
-			}
+			// Filtrage
+			if (($filterResourceType != "all_resources") && ($filterResourceType != "")) $select->createFilterQuery('mime_type')->setQuery('mime_type:'.$filterResourceType);
 			
-			// Traitement à faire sur la liste réponse
-			// Pour un fichier on tronque le content
-			if (($r["mime_type"] == "application/pdf") && isset($r["content"])) $r["content"] = substr($r["content"],0,200);
+			$select->setQuery($search);
+			$select->setStart(((int)$page-1)*$nbByPage)->setRows($nbByPage);
+			$select->setOmitHeader(false);
 			
-			// Lecture du nom du WKS
-			$wks = $manager->getRepository('Claroline\CoreBundle\Entity\Workspace\AbstractWorkspace')->find($r["wks_id"]);
-  // echo "<PRE>";
-  // print_r($wks);
-  // echo "</PRE>";
-			$r["wks_name"] = $wks->getName();
+			$request = $client->createRequest($select)->addParam('qt','claroline');
+			$response = $client->executeRequest($request);
+			$results = $client->createResult($select, $response);		
 			
-			// Lecture du sujet du owner
-			if (isset($r["user_id"]))
+			$nb = $results->getNumFound();
+			$time = 0;
+	// display facet results
+	$facetResult = $results->getFacetSet()->getFacet('content-type');
+	$facetResultWks = $results->getFacetSet()->getFacet('wks');
+	$facetWks = array();
+	foreach ($facetResultWks as $key => $frWks) {
+			$wks = $manager->getRepository('Claroline\CoreBundle\Entity\Workspace\AbstractWorkspace')->find($key);
+		$facetWks[$wks->getName()] = $frWks;
+	}
+		// echo "<PRE>";
+		// print_r($facetResultWks);
+		// echo "</PRE>";
+			
+			
+			// display the total number of documents found by solr
+	//echo 'NumFound: '.$results->getNumFound();
+	  // echo "<PRE>";
+	  // print_r($results);
+	  // echo "</PRE>";
+			$lr = array();
+			foreach ($results as $result)
 			{
-				$owner = $manager->getRepository('Claroline\CoreBundle\Entity\User')->find($r["user_id"]);
-				$r["first_name"] = $owner->getFirstName();
-				$r["last_name"] = $owner->getLastName();
+				$r = array();
+				foreach($result AS $field => $value)
+				{
+					if(is_array($value)) $value = implode(', ', $value);
+
+					$r[$field] = $value;
+				}
+				
+				if (!isset($r["mime_type"])) $r["mime_type"] = "";
+				
+				// Traitement à faire sur la liste réponse
+				// Pour un fichier on tronque le content
+				// TODO
+				if (($r["mime_type"] == "application/pdf") && isset($r["content"])) $r["content"] = substr($r["content"],0,200);
+				
+				// Lecture du nom du WKS
+				if (isset($r["wks_id"]))
+				{
+					$wks = $manager->getRepository('Claroline\CoreBundle\Entity\Workspace\AbstractWorkspace')->find($r["wks_id"]);
+		  // echo "<PRE>";
+		  // print_r($wks);
+		  // echo "</PRE>";
+					$r["wks_name"] = $wks->getName();
+				}
+				else
+				{
+					$r["wks_name"] = "";
+				}
+				
+				// Est-ce qu'il s'agit d'une transcription texte d'une vidéo
+				if (isset($r["attr_custom:dailymotion"]))
+				{
+				}
+				else $r["attr_custom:dailymotion"] = "";
+				
+				
+				// Lecture du sujet du owner
+				if (isset($r["user_id"]))
+				{
+					$owner = $manager->getRepository('Claroline\CoreBundle\Entity\User')->find($r["user_id"]);
+					$r["first_name"] = $owner->getFirstName();
+					$r["last_name"] = $owner->getLastName();
+				}
+				
+				// Lecture du sujet du forum si présent
+				if (isset($r["subject_id"]))
+				{
+					$forumSubject = $manager->getRepository('Claroline\ForumBundle\Entity\Subject')->find($r["subject_id"]);
+					$r["name"] = $forumSubject->getTitle();
+				}
+				
+				array_push($lr, $r);
+				unset($r);
 			}
+
+			//$pager = $this->pagerFactory->createPagerFromArray($lr, $page, 5);
+			//return $this->render('OrangeSearchBundle:Search:reponse.html.twig', array('name' => $name, 'results' => $lr, 'facets' => $facetResult, 'facetsWks' => $facetWks));
 			
-			// Lecture du sujet du forum si présent
-			if (isset($r["subject_id"]))
-			{
-				$forumSubject = $manager->getRepository('Claroline\ForumBundle\Entity\Subject')->find($r["subject_id"]);
-				$r["name"] = $forumSubject->getTitle();
-			}
+			$currentUrl = substr($this->getRequest()->getUri(),0,strpos($this->getRequest()->getUri(), "/search/request"));
 			
-			array_push($lr, $r);
-			unset($r);
+			$ressourceType = array();
+			$ressourceType[]="all_resources";
+			$ressourceType[]="custom/claroline_forum";
+			$ressourceType[]="custom/text";
+			$ressourceType[]="custom/file";
+			$ressourceType[]="custom/claroline_announcement_aggregate";
+			$ressourceType[]="custom/icap_wiki";
+			$ressourceType[]="custom/ujm_exercise";
+			
+			return array(
+				'name' => $search, 
+				'nbResults' => $nb,
+				'nbByPage' => $nbByPage,
+				'page' => $page,
+				'results' => $lr, 
+				'facets' => $facetResult, 
+				'facetsWks' => $facetWks,
+				'url' => $currentUrl,
+				'time' => $time,
+				'resourcesType' => $ressourceType
+			);
+		} catch (Solarium\Exception\HttpException $e) {
+			echo 'Ping query failed';
 		}
 
-        //$pager = $this->pagerFactory->createPagerFromArray($lr, $page, 5);
-		//return $this->render('OrangeSearchBundle:Search:reponse.html.twig', array('name' => $name, 'results' => $lr, 'facets' => $facetResult, 'facetsWks' => $facetWks));
-		
-		$currentUrl = substr($this->getRequest()->getUri(),0,strpos($this->getRequest()->getUri(), "/search/request"));
-		
-		
-		return array(
-			'name' => $name, 
-			'nbResults' => $nb,
-			'nbByPage' => $nbByPage,
-			'page' => $page,
-			'results' => $lr, 
-			'facets' => $facetResult, 
-			'facetsWks' => $facetWks,
-			'url' => $currentUrl,
-			'time' => $time
-		);
     }
 
+    /**
+     * @EXT\Route(
+     *     "/request/ping/",
+     *     name = "orange_search_ping"
+     * )
+     * @EXT\Method("GET")
+     *
+     * @EXT\Template("OrangeSearchBundle:AdminSolr:ping.html.twig")
+     *
+     * @return Response
+     */
+    public function pingAction()
+    {
+		$this->assertIsGranted('ROLE_USER');
+	
+		$manager = $this->getDoctrine()->getManager();
+        $config = $manager->getRepository('OrangeSearchBundle:SearchConfig')->findAll();
+        if (count($config)==0) 
+		{
+			// lancer une exception
+            throw new InvalidConfigurationException(InvalidConfigurationException::MISSING_CONFIG);
+		}
+		
+		$config = array(
+			'endpoint' => array(
+				'localhost' => array(
+					'host' => $config[0]->getHost(),
+					'port' => $config[0]->getPort(),
+					'path' => $config[0]->getPath()
+				)
+			)
+		);		
+
+		$client = new \Solarium\Client($config);
+		$ping = $client->createPing();
+
+		try {
+			$result = $client->ping($ping);
+		
+			return array(
+				'status' => 'Serveur accessible'
+			);
+		} catch (Solarium\Exception $e) {
+			return array(
+				'status' => 'Serveur non disponible'
+			);
+		}
+
+    }
+	
     private function assertIsGranted($attributes, $object = null)
     {
         if (false === $this->security->isGranted($attributes, $object)) {

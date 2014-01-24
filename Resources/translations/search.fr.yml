@@ -10,3 +10,10 @@ solr_path: Chemin
 list_results: Liste résultats
 solr_current_configuration: Configuration actuelle
 solr_change_configuration: Modification de la configuration
+all_resources: Tous les objets
+custom/claroline_forum: Forum
+custom/text: Article
+custom/file: Fichier
+custom/claroline_announcement_aggregate: Annonce
+custom/icap_wiki: Wiki
+custom/ujm_exercise: Exercice

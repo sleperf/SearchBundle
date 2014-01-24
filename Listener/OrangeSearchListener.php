@@ -2,12 +2,14 @@
 
 namespace Orange\SearchBundle\Listener;
 
-use Symfony\Component\DependencyInjection\ContainerAwareInterface;
+//use Symfony\Component\DependencyInjection\ContainerAwareInterface;
 use Symfony\Component\DependencyInjection\ContainerAware;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\File\MimeType\MimeTypeGuesser;
 use JMS\DiExtraBundle\Annotation as DI;
+use Claroline\CoreBundle\Entity\Home\Content;
+use Claroline\CoreBundle\Entity\Home\Content2Type;
 use Claroline\CoreBundle\Entity\Resource\ResourceNode;
 use Claroline\CoreBundle\Entity\Resource\ResourceShortcut;
 use Claroline\CoreBundle\Entity\Resource\ResourceRights;
@@ -17,8 +19,21 @@ use Claroline\CoreBundle\Entity\Resource\Revision;
 use Claroline\CoreBundle\Entity\Resource\Directory;
 use Claroline\CoreBundle\Entity\Resource\AbstractResource;
 use Claroline\CoreBundle\Entity\AnnouncementAggregate;
+use Icap\WikiBundle\Entity\Contribution;
+use Icap\WikiBundle\Entity\Wiki;
+use Icap\WikiBundle\Entity\Section;
+use Icap\DropzoneBundle\Entity\Dropzone;
+use Icap\BlogBundle\Entity\BlogOptions;
+use Icap\BlogBundle\Entity\Blog;
+use UJM\ExoBundle\Entity\Exercise;
+use UJM\ExoBundle\Entity\Subscription;
+// For Debug
 use Claroline\CoreBundle\Entity\Log\Log;
+use Orange\SearchBundle\Entity\SearchConfig;
+use Claroline\CoreBundle\Entity\Widget\WidgetInstance;
+// End for Debug
 use Claroline\CoreBundle\Entity\UserMessage;
+//use Claroline\CoreBundle\Entity\Message;
 use Claroline\ForumBundle\Entity\Message;
 use Claroline\ForumBundle\Entity\Subject;
 use Claroline\ForumBundle\Entity\Forum;
@@ -29,6 +44,8 @@ use Claroline\CoreBundle\Persistence\ObjectManager;
 use Claroline\CoreBundle\Manager\RoleManager;
 use Doctrine\ORM\Event\PostFlushEventArgs;
 use Doctrine\ORM\Event\LifecycleEventArgs;
+use Sensio\Bundle\FrameworkExtraBundle\Configuration as EXT;
+
 
 /**
  * @DI\Service
@@ -36,7 +53,20 @@ use Doctrine\ORM\Event\LifecycleEventArgs;
 class OrangeSearchListener extends ContainerAware
 {
     protected $configSolr;
+    protected $container;
 
+    /**
+     * @DI\InjectParams({
+     *     "container" = @DI\Inject("service_container")
+     * })
+     */
+    public function __construct(
+        ContainerInterface $container
+	)
+    {
+        $this->container = $container;
+    }
+	
     /**
      * @param LifecycleEventArgs $event
      */
@@ -105,14 +135,14 @@ class OrangeSearchListener extends ContainerAware
 				)
 			)
 		);		
-		
 		if ($entity instanceof File) 
 		{
-			//\Doctrine\Common\Util\Debug::dump(var_export ($evtm,true));
+			//\Doctrine\Common\Util\Debug::dump($this->container);
 			$mimeType = $entity->getMimeType();
 
 			// Extension for which we index the file content or metadata content
 			if (($mimeType == "image/png") || 
+				($mimeType == "application/msword") ||
 				($mimeType == "application/pdf") || 
 				($mimeType == "application/octet-stream"))
 			{
@@ -139,9 +169,55 @@ class OrangeSearchListener extends ContainerAware
 		{
 			// TODO
 		}
-		else if ($entity instanceof Message) 
+		else if ($entity instanceof Claroline\CoreBundle\Entity\Message) 
 		{
 			// TODO
+			$this->indexMessage($entity, $configSolr);
+		}
+		else if ($entity instanceof Wiki) 
+		{
+			// TODO - Wiki
+		}
+		else if ($entity instanceof Section) 
+		{
+			// TODO - Wiki
+		}
+		else if ($entity instanceof Contribution) 
+		{
+			// TODO - Wiki
+		}
+		else if ($entity instanceof Dropzone) 
+		{
+			// TODO
+		}
+		else if ($entity instanceof Exercise) 
+		{
+			// TODO - Exo
+		}
+		else if ($entity instanceof Subscription) 
+		{
+			// TODO - Exo
+		}
+		else if ($entity instanceof Blog) 
+		{
+			// TODO - Blog
+		}
+		else if ($entity instanceof BlogOptions) 
+		{
+			// TODO - Blog
+		}
+		else if ($entity instanceof Content) 
+		{
+			// TODO - Article page d'accueil
+			$this->indexHomeContent($entity, $configSolr);
+		}
+		else if ($entity instanceof Content2Type) 
+		{
+			// TODO - Article page d'accueil
+		}
+		else if ($entity instanceof WidgetInstance) 
+		{
+			// TODO - Texte dans un widget
 		}
 		else if ($entity instanceof ResourceShortcut) 
 		{
@@ -171,7 +247,9 @@ class OrangeSearchListener extends ContainerAware
 		{
 			// DEBUG si autre ressource que celle qu'on indexe pas
 			if (!($entity instanceof Log) &&
-				!($entity instanceof Revision))
+				!($entity instanceof Revision) &&
+				!($entity instanceof SearchConfig) && 
+				!($entity instanceof ResourceIcon))
 			{
 				\Doctrine\Common\Util\Debug::dump($entity);
 			}
@@ -195,7 +273,9 @@ class OrangeSearchListener extends ContainerAware
 			$query = $client->createExtract();
 			$query->addFieldMapping('fmap.content', 'content');
 			$query->setUprefix('attr_');
-			$query->setFile('/var/www/html/claroline/20131113/Claroline/files/'.$filename);
+			
+			$path = $this->container->getParameter('claroline.param.files_directory');
+			$query->setFile($path . DIRECTORY_SEPARATOR . $filename);
 			$query->setCommit(true);
 			$query->setOmitHeader(false);
 
@@ -215,10 +295,7 @@ class OrangeSearchListener extends ContainerAware
 			$doc->first_name= $node->getCreator()->getFirstName();
 			$doc->last_name= $node->getCreator()->getLastName();
 			$doc->attr_filename = $filename;
-			//$doc->attr_filename_path = $node->getPath();
-			//$doc->dir = $this->getContainer()->getParameter('claroline.param.files_directory');
-			//$container = $this->getContainer()->getParameter('claroline.param.files_directory');
-			//$container = $this->getContainer();
+			$doc->attr_path = $path . DIRECTORY_SEPARATOR . 'files'. DIRECTORY_SEPARATOR . $filename;
 			$query->setDocument($doc);
 
 			// this executes the query and returns the result
@@ -250,6 +327,52 @@ class OrangeSearchListener extends ContainerAware
 			// this executes the query and returns the result
 			$result = $client->update($update);
 		}
+	}
+	
+    function indexHomeContent(Content $content, $configSolr)
+    {
+		$client = new \Solarium\Client($configSolr);
+		$update = $client->createUpdate();
+		
+		// create a new document for the data
+		$doc1 = $update->createDocument();
+		$doc1->id = 'home-content-'.$content->getId();
+		$doc1->name = $content->getTitle();
+		$doc1->content_type = 'home-content';
+		$doc1->content= $content->getContent();
+		$doc1->attr_date = $content->getCreated();
+		// TODO $doc1->mime_type = ;
+		// TODO $doc1->res_icon_location= ;
+
+		// add the documents and a commit command to the update query
+		$update->addDocuments(array($doc1));
+		$update->addCommit();
+
+		// this executes the query and returns the result
+		$result = $client->update($update);
+	}
+
+    function indexMessage(Message $message, $configSolr)
+    {
+		$client = new \Solarium\Client($configSolr);
+		$update = $client->createUpdate();
+		
+		// create a new document for the data
+		$doc1 = $update->createDocument();
+		$doc1->id = 'message-'.$message->getId();
+		$doc1->name = $message->getObject();
+		$doc1->content_type = 'message';
+		$doc1->content= $message->getContent();
+		$doc1->attr_date = $message->getDate();
+		// TODO $doc1->mime_type = ;
+		// TODO $doc1->res_icon_location= ;
+
+		// add the documents and a commit command to the update query
+		$update->addDocuments(array($doc1));
+		$update->addCommit();
+
+		// this executes the query and returns the result
+		$result = $client->update($update);
 	}
 	
     function indexForumMessage(Message $message, $configSolr)
