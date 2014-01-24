@@ -15,7 +15,7 @@
     "require": {
         "php": ">=5.4.0",
         "nelmio/solarium-bundle": "2.*",
-        "solarium/solarium": "~3.0"
+        "solarium/solarium": "~3.0",
         "claroline/core-bundle": ">=2.1.11,<3.0"
     },
     "autoload": {
